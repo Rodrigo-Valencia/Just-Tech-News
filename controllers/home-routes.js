@@ -1,10 +1,9 @@
 const router = require('express').Router();
 const sequelize = require('../config/connection');
-const { Post, User, Comment } = require('../models');
+const { Post, User, Comment, Vote } = require('../models');
 
 // get all posts for homepage
 router.get('/', (req, res) => {
-  console.log(req.session);
   console.log('======================');
   Post.findAll({
     attributes: [
@@ -28,28 +27,22 @@ router.get('/', (req, res) => {
         attributes: ['username']
       }
     ]
-  }).then(dbPostData => {
-    // pass a single post object into the homepage template
-    // console.log(dbPostData[0]);
-    const posts = dbPostData.map(post => post.get({ plain: true }));
+  })
+    .then(dbPostData => {
+      const posts = dbPostData.map(post => post.get({ plain: true }));
 
-    res.render('homepage', {
-      posts,
-      loggedIn: req.session.loggedIn
-  }).catch(err => {
-    console.log(err);
-    res.status(500).json(err);
-  });
+      res.render('homepage', {
+        posts,
+        loggedIn: req.session.loggedIn
+      });
+    })
+    .catch(err => {
+      console.log(err);
+      res.status(500).json(err);
+    });
 });
 
-router.get('/login', (req, res) => {
-  if (req.session.loggedIn) {
-    res.redirect('/');
-    return;
-  }
-  res.render('login');
-});
-
+// get single post
 router.get('/post/:id', (req, res) => {
   Post.findOne({
     where: {
@@ -83,18 +76,26 @@ router.get('/post/:id', (req, res) => {
         return;
       }
 
-      // serialize the data
       const post = dbPostData.get({ plain: true });
 
-      // pass data to template
       res.render('single-post', {
         post,
         loggedIn: req.session.loggedIn
       });
-    // .catch(err => {
-    //   console.log(err);
-    //   res.status(500).json(err);
+    })
+    .catch(err => {
+      console.log(err);
+      res.status(500).json(err);
     });
+});
+
+router.get('/login', (req, res) => {
+  if (req.session.loggedIn) {
+    res.redirect('/');
+    return;
+  }
+
+  res.render('login');
 });
 
 module.exports = router;
